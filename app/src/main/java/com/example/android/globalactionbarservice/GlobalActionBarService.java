@@ -15,11 +15,15 @@
 package com.example.android.globalactionbarservice;
 
 import android.accessibilityservice.AccessibilityService;
+import android.accessibilityservice.AccessibilityServiceInfo;
 import android.accessibilityservice.GestureDescription;
+import android.content.Intent;
 import android.graphics.Path;
 import android.graphics.PixelFormat;
 import android.media.AudioManager;
 import android.os.Build;
+import android.os.Handler;
+import android.provider.Settings;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -54,7 +58,6 @@ public class GlobalActionBarService extends AccessibilityService {
     @Override
     protected void onServiceConnected() {
         Log.e("eventddd", "connected");
-
 
 
         // Create an overlay and display the action bar
@@ -98,11 +101,57 @@ public class GlobalActionBarService extends AccessibilityService {
         volumeUpButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                AudioManager audioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
-                audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC,
-                        AudioManager.ADJUST_RAISE, AudioManager.FLAG_SHOW_UI);
+                startActivity(new Intent(android.provider.Settings.ACTION_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+                try {
+                    Thread.sleep(3000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                AccessibilityNodeInfo scrollable = findScrollableNode(getRootInActiveWindow());
+                if (scrollable != null) {
+                    scrollable.performAction(AccessibilityNodeInfo.AccessibilityAction.ACTION_SCROLL_FORWARD.getId());
+                }
+                clickEvent("Accounts", 2000);
+                clickEvent("Add Account", 5000);
+                clickEvent("Google", 8000);
+           //     clickEvent("Add Account", 5000);
+               // clickEvent("TURN ON", 10000);
+                // clickEvent("15 seconds",5000);
+
+
+                //  Log.e("TAGAA", getRootInActiveWindow().findAccessibilityNodeInfosByText("sleep").get(0).getParent().isClickable() + " ");
+
+
             }
         });
+    }
+
+    private void clickEvent(final String text, long time) {
+        new Handler().postDelayed(new Runnable() {
+            public void run() {
+                Log.e("TAG", getRootInActiveWindow().findAccessibilityNodeInfosByText(text).size() + " ");
+
+                boolean clicked = false;
+                for (int i = 0; i < getRootInActiveWindow().findAccessibilityNodeInfosByText(text).size(); i++) {
+                    if (getRootInActiveWindow().findAccessibilityNodeInfosByText(text).get(i).isClickable()) {
+                        clicked = true;
+                        getRootInActiveWindow().findAccessibilityNodeInfosByText(text).get(i).performAction(AccessibilityNodeInfo.ACTION_CLICK);
+                    } else {
+                        Log.e("TAG", "click false "+getRootInActiveWindow().findAccessibilityNodeInfosByText(text).get(i).toString());
+
+                    }
+
+
+                }
+
+                if (!clicked) {
+                    AccessibilityNodeInfo aInfo = getRootInActiveWindow().findAccessibilityNodeInfosByText(text).get(0).getParent();
+                    aInfo.performAction(AccessibilityNodeInfo.ACTION_CLICK);
+                }
+
+
+            }
+        }, time);
     }
 
     private AccessibilityNodeInfo findScrollableNode(AccessibilityNodeInfo root) {
